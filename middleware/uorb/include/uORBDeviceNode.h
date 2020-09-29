@@ -4,13 +4,22 @@
 #include <nuttx/config.h>
 #include <nuttx/compiler.h>
 
+#include <nuttx/semaphore.h>
 #include <nuttx/fs/ioctl.h>
+#include <atomic>
+
+#include "include/uORB.h"
+//#include "SubscriptionInterval.hpp"
+//#include "SubscriptionCallback.hpp"
+
+typedef uint64_t hrt_abstime;
+
+//static uORB::SubscriptionInterval *filp_to_subscription(file *filp) { return static_cast<uORB::SubscriptionInterval *>(filp->f_priv); }
 
 class uORBDeviceNode
 {
   public:
-	uORBDeviceNode(const struct orb_metadata *meta, const uint8_t instance, const char *path, uint8_t priority,
-		   uint8_t queue_size = 1);
+	uORBDeviceNode(const struct orb_metadata *meta, const uint8_t instance, const char *path, uint8_t queue_size = 1);
 	virtual ~uORBDeviceNode();
 
 	// no copy, assignment, move, move assignment
@@ -22,9 +31,9 @@ class uORBDeviceNode
 	/**
 	 * Method to publish a data to this node.
 	 */
-	//static ssize_t    publish(const orb_metadata *meta, orb_advert_t handle, const void *data);
+	static ssize_t    publish(const orb_metadata *meta, orb_advert_t handle, const void *data);
 
-	//static int        unadvertise(orb_advert_t handle);
+	static int        unadvertise(orb_advert_t handle);
 
 #ifdef ORB_COMMUNICATOR
 	static int16_t topic_advertised(const orb_metadata *meta, int priority);
@@ -91,7 +100,7 @@ class uORBDeviceNode
 	 * @param reset if true, reset statistics afterwards
 	 * @return true if printed something, false otherwise (if no lost messages)
 	 */
-	bool print_statistics(bool reset);
+	bool print_statistics(int max_topic_length);
 
 	uint8_t get_queue_size() const { return _queue_size; }
 
@@ -99,11 +108,11 @@ class uORBDeviceNode
 
 	uint32_t lost_message_count() const { return _lost_messages; }
 
-	//unsigned published_message_count() const { return _generation.load(); }
+	unsigned published_message_count() const { return _generation.load(); }
 
 	const orb_metadata *get_meta() const { return _meta; }
 
-	//const char *get_name() const { return _meta->o_name; }
+	const char *get_name() const { return _meta->o_name; }
 
 	uint8_t get_instance() const { return _instance; }
 
@@ -123,42 +132,59 @@ class uORBDeviceNode
 	 */
 	bool copy(void *dst, unsigned &generation);
 
-	/**
-	 * Copies data and the corresponding generation
-	 * from a node to the buffer provided.
-	 *
-	 * @param dst
-	 *   The buffer into which the data is copied.
-	 *   If topic was not updated since last check it will return false but
-	 *   still copy the data.
-	 * @param generation
-	 *   The generation that was copied.
-	 * @return uint64_t
-	 *   Returns the timestamp of the copied data.
-	 */
-	uint64_t copy_and_get_timestamp(void *dst, unsigned &generation);
-
+	/*TODO::Make it a IOCTL operation*/
 	// add item to list of work items to schedule on node update
-	//bool register_callback(SubscriptionCallback *callback_sub);
-
+	bool register_callback(SubscriptionCallback *callback_sub);
 	// remove item from list of work items
-	//void unregister_callback(SubscriptionCallback *callback_sub);
+	void unregister_callback(SubscriptionCallback *callback_sub);
 
+
+	/**
+	 * Method to create a subscriber instance and return the struct
+	 * pointing to the subscriber as a file pointer.
+	 */
+	int open(FAR struct file *filep);
+
+	/**
+	 * Method to close a subscriber for this topic.
+	 */
+	int close(FAR struct file *filep);
+
+	/**
+	 * reads data from a subscriber node to the buffer provided.
+	 * @param filp
+	 *   The subscriber from which the data needs to be read from.
+	 * @param buffer
+	 *   The buffer into which the data is read into.
+	 * @param buflen
+	 *   the length of the buffer
+	 * @return
+	 *   ssize_t the number of bytes read.
+	 */
+	ssize_t read(FAR struct file *filep, FAR char *buffer, size_t buflen);
+
+	/**
+	 * writes the published data to the internal buffer to be read by
+	 * subscribers later.
+	 * @param filp
+	 *   the subscriber; this is not used.
+	 * @param buffer
+	 *   The buffer for the input data
+	 * @param buflen
+	 *   the length of the buffer.
+	 * @return ssize_t
+	 *   The number of bytes that are written
+	 */
+	ssize_t write(FAR struct file *filep, FAR const char *buffer, size_t buflen);
+
+	/**
+	 * IOCTL control for the subscriber.
+	 */
+	int ioctl(FAR struct file *filep, int cmd, unsigned long arg);
+
+	int poll(FAR struct file *filep, struct pollfd *fds, bool setup);
 
 private:
-
-	/**
-	 * Copies data and the corresponding generation
-	 * from a node to the buffer provided. Caller handles locking.
-	 *
-	 * @param dst
-	 *   The buffer into which the data is copied.
-	 * @param generation
-	 *   The generation that was copied.
-	 * @return bool
-	 *   Returns true if the data was copied.
-	 */
-	bool copy_locked(void *dst, unsigned &generation);
 
 	struct UpdateIntervalData {
 		uint64_t last_update{0}; /**< time at which the last update was provided, used when update_interval is nonzero */
@@ -175,8 +201,8 @@ private:
 	const orb_metadata *_meta; /**< object metadata information */
 	const uint8_t _instance; /**< orb multi instance identifier */
 	uint8_t     *_data{nullptr};   /**< allocated object buffer */
-	//hrt_abstime   _last_update{0}; /**< time the object was last updated */
-	//std::atomic<unsigned>  _generation{0};  /**< object generation count */
+	hrt_abstime   _last_update{0}; /**< time the object was last updated */
+	std::atomic<unsigned>  _generation{0};  /**< object generation count */
 	//List<uORB::SubscriptionCallback *>	_callbacks;
 	uint8_t   _priority;  /**< priority of the topic */
 	bool _advertised{false};  /**< has ever been advertised (not necessarily published data yet) */
@@ -200,10 +226,10 @@ private:
 	bool      appears_updated(SubscriberData *sd);
 
 protected:
-  sem_t _lock;
-  void lock();
-  void unlock();
-  /* data */
+	sem_t _lock;
+	void lock(){do {} while (sem_wait(&_lock) != 0);}
+	void unlock(){sem_post(&_lock);}
+	/* data */
 };
 
 int uORBNodeDevice_register(FAR const char *path);

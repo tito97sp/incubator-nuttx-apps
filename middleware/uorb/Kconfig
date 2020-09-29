@@ -3,9 +3,28 @@
 # see the file kconfig-language.txt in the NuttX tools repository.
 #
 
+
 config UORB
-	tristate "uORB async pub/sub IPC"
+	tristate "uORB"
 	default n
-	depends on HAVE_CXX
 	---help---
 		Enable the uORB 
+
+if UORB
+
+config UORB_PROGNAME
+	string "Program name"
+	default "uorb"
+	---help---
+		This is the name of the program that will be used when the NSH ELF
+		program is installed.
+
+config UORB_PRIORITY
+	int "uORB task priority"
+	default 100
+
+config UORB_STACKSIZE
+	int "uORB stack size"
+	default DEFAULT_TASK_STACKSIZE
+
+endif

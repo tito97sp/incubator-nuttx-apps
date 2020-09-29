@@ -6,5 +6,6 @@
 #
 
 menu "Middleware"
+source "/home/andres/nuttxspace/apps/middleware/hello/Kconfig"
 source "/home/andres/nuttxspace/apps/middleware/uorb/Kconfig"
 endmenu # Middleware
