@@ -33,6 +33,9 @@
 
 #pragma once
 
+#include <stdlib.h>
+#include <string.h>
+
 class ORBSet
 {
 public:
