@@ -54,7 +54,7 @@ public:
 
 	bool advertised() const { return _handle != nullptr; }
 
-	bool unadvertise() { return (DeviceNode::unadvertise(_handle) == PX4_OK); }
+	bool unadvertise() { return (DeviceNode::unadvertise(_handle) == 0); }
 
 	orb_id_t get_topic() const { return get_orb_meta(_orb_id); }
 
@@ -111,7 +111,7 @@ public:
 			advertise();
 		}
 
-		return (DeviceNode::publish(get_topic(), _handle, &data) == PX4_OK);
+		return (DeviceNode::publish(get_topic(), _handle, &data) == 0);
 	}
 };
 
