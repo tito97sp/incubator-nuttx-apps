@@ -42,6 +42,10 @@
 #include <cstdio>
 #include <debug.h>
 
+#include <fcntl.h>
+#include <sys/types.h>
+#include <nuttx/cdev/CDev.hpp>
+
 //***************************************************************************
 // Definitions
 //***************************************************************************
@@ -64,11 +68,12 @@
 // Private Classes
 //***************************************************************************
 
-class CHelloWorld
+class CHelloWorld : public cdev::CDev
 {
   public:
-    CHelloWorld(void) : mSecret(42)
+    CHelloWorld(int i, const char *devname) : CDev(devname)
     {
+      mSecret = i;
       cxxinfo("Constructor: mSecret=%d\n", mSecret);
     }
 
@@ -104,9 +109,7 @@ class CHelloWorld
 // Define a statically constructed CHellowWorld instance if C++ static
 // initializers are supported by the platform
 
-#ifdef CONFIG_HAVE_CXXINITIALIZE
-static CHelloWorld g_HelloWorld;
-#endif
+
 
 //***************************************************************************
 // Public Functions
@@ -122,25 +125,15 @@ extern "C"
  {
     // Exercise an explicitly instantiated C++ object
 
-    CHelloWorld *pHelloWorld = new CHelloWorld;
-    printf("helloxx_main: Saying hello from the dynamically constructed instance\n");
-    pHelloWorld->HelloWorld();
+    CHelloWorld *pHelloWorld = new CHelloWorld(42, "/dev/hello");
+    pHelloWorld->init();
+
+    open("/dev/hello", O_RDONLY);
+    //printf("helloxx_main: Saying hello from the dynamically constructed instance\n");
+    //pHelloWorld->HelloWorld();
 
     // Exercise an C++ object instantiated on the stack
 
-    CHelloWorld HelloWorld;
-
-    printf("helloxx_main: Saying hello from the instance constructed on the stack\n");
-    HelloWorld.HelloWorld();
-
-    // Exercise an statically constructed C++ object
-
-#ifdef CONFIG_HAVE_CXXINITIALIZE
-    printf("helloxx_main: Saying hello from the statically constructed instance\n");
-    g_HelloWorld.HelloWorld();
-#endif
-
-    delete pHelloWorld;
     return 0;
   }
 }

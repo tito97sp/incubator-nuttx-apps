@@ -1,6 +1,8 @@
 /****************************************************************************
+ * examples/hello/hello_main.c
  *
- *   Copyright (c) 2015 Mark Charlebois. All rights reserved.
+ *   Copyright (C) 2008, 2011-2012 Gregory Nutt. All rights reserved.
+ *   Author: Gregory Nutt <gnutt@nuttx.org>
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -12,7 +14,7 @@
  *    notice, this list of conditions and the following disclaimer in
  *    the documentation and/or other materials provided with the
  *    distribution.
- * 3. Neither the name PX4 nor the names of its contributors may be
+ * 3. Neither the name NuttX nor the names of its contributors may be
  *    used to endorse or promote products derived from this software
  *    without specific prior written permission.
  *
@@ -31,119 +33,43 @@
  *
  ****************************************************************************/
 
-#pragma once
+/****************************************************************************
+ * Included Files
+ ****************************************************************************/
 
-#include <stdlib.h>
-#include <string.h>
+#include <nuttx/config.h>
+#include <stdio.h>
 
-class ORBSet
+//#include <CDev.hpp>
+
+/****************************************************************************
+ * Public Functions
+ ****************************************************************************/
+
+/****************************************************************************
+ * hello_main
+ ****************************************************************************/
+
+class hello_prueba 
 {
-public:
-	struct Node {
-		struct Node *next;
-		const char *node_name;
-	};
-
-	ORBSet() :
-		_top(nullptr),
-		_end(nullptr)
-	{ }
-	~ORBSet()
-	{
-		while (_top != nullptr) {
-			unlinkNext(_top);
-
-			if (_top->next == nullptr) {
-				free((void *)_top->node_name);
-				free(_top);
-				_top = nullptr;
-			}
-		}
-	}
-	void insert(const char *node_name)
-	{
-		Node **p;
-
-		if (_top == nullptr) {
-			p = &_top;
-
-		} else {
-			p = &_end->next;
-		}
-
-		*p = (Node *)malloc(sizeof(Node));
-
-		if (_end) {
-			_end = _end->next;
-
-		} else {
-			_end = _top;
-		}
-
-		_end->next = nullptr;
-		_end->node_name = strdup(node_name);
-	}
-
-	bool find(const char *node_name)
-	{
-		Node *p = _top;
-
-		while (p) {
-			if (strcmp(p->node_name, node_name) == 0) {
-				return true;
-			}
-
-			p = p->next;
-		}
-
-		return false;
-	}
-
-	bool erase(const char *node_name)
-	{
-		Node *p = _top;
-
-		if (_top && (strcmp(_top->node_name, node_name) == 0)) {
-			p = _top->next;
-			free((void *)_top->node_name);
-			free(_top);
-			_top = p;
-
-			if (_top == nullptr) {
-				_end = nullptr;
-			}
-
-			return true;
-		}
-
-		while (p->next) {
-			if (strcmp(p->next->node_name, node_name) == 0) {
-				unlinkNext(p);
-				return true;
-			}
-		}
-
-		return false;
-	}
-
 private:
-
-	void unlinkNext(Node *a)
-	{
-		Node *b = a->next;
-
-		if (b != nullptr) {
-			if (_end == b) {
-				_end = a;
-			}
-
-			a->next = b->next;
-			free((void *)b->node_name);
-			free(b);
-		}
-	}
-
-	Node *_top;
-	Node *_end;
+  /* data */
+public:
+  hello_prueba(/* args */);
+  ~hello_prueba();
 };
 
+hello_prueba::hello_prueba(/* args */)
+{
+}
+
+hello_prueba::~hello_prueba()
+{
+}
+
+
+int main(int argc, FAR char *argv[])
+{
+  printf("Hello, World!!\n");
+  return 0;
+}

@@ -45,7 +45,7 @@ MODULE    = $(CONFIG_UORB)
 # Hello, World! Example
 
 
-CXXSRCS = uORBDeviceNode.cxx
+#CXXSRCS = uORBDeviceNode.cxx
 
 MAINSRC = uorb_main.cxx
 

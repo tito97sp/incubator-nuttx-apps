@@ -49,7 +49,9 @@
 #include <errno.h>
 #include <debug.h>
 
-#include "./include/uORBDeviceNode.h"
+//include "./include/uORBDeviceNode.hpp"
+
+#include "./include/uORB.h"
 
 //***************************************************************************
 // Definitions
@@ -80,24 +82,24 @@ extern "C"
   int main(int argc, FAR char *argv[])
  {
 
-    uORBNodeDevice_register("/dev/topic01");
+    // uORBNodeDevice_register("/dev/topic01");
 
-    int fd = open("/dev/topic01", O_WRONLY);
-    if(fd < 0)
-    {
-      int errcode = errno;
-      printf("uorb: ERROR: Failed to open %s: %d\n", "/dev/topic01", errcode);
-      //goto errout;
-    }
+    // int fd = open("/dev/topic01", O_WRONLY);
+    // if(fd < 0)
+    // {
+    //   int errcode = errno;
+    //   printf("uorb: ERROR: Failed to open %s: %d\n", "/dev/topic01", errcode);
+    //   //goto errout;
+    // }
 
-    const char *hola = "hola me llamo andres";
-    int ret = write(fd, hola, sizeof(hola));
+    // const char *hola = "hola me llamo andres";
+    // int ret = write(fd, hola, sizeof(hola));
 
 
-    return 0;
+     return 0;
 
-    errout:
-      printf("uorb: Terminating\n");
-      return EXIT_FAILURE;
+    // errout:
+    //   printf("uorb: Terminating\n");
+    //   return EXIT_FAILURE;
   }
 }

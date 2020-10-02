@@ -1,8 +1,7 @@
 ############################################################################
-# apps/examples/hello/Make.defs
-# Adds selected applications to apps/ build
+# apps/examples/hello/Makefile
 #
-#   Copyright (C) 2015 Gregory Nutt. All rights reserved.
+#   Copyright (C) 2008, 2010-2013 Gregory Nutt. All rights reserved.
 #   Author: Gregory Nutt <gnutt@nuttx.org>
 #
 # Redistribution and use in source and binary forms, with or without
@@ -34,6 +33,17 @@
 #
 ############################################################################
 
-ifneq ($(CONFIG_EXAMPLES_HELLO),)
-CONFIGURED_APPS += $(APPDIR)/middleware/hello
-endif
+include $(APPDIR)/Make.defs
+
+# Hello, World! built-in application info
+
+PROGNAME  = $(CONFIG_HELLO_ANDRES_PROGNAME)
+PRIORITY  = $(CONFIG_HELLO_ANDRES_PRIORITY)
+STACKSIZE = $(CONFIG_HELLO_ANDRES_STACKSIZE)
+MODULE    = $(CONFIG_HELLO_ANDRES)
+
+# Hello, World! Example
+
+MAINSRCS = hello_andres.cxx
+
+include $(APPDIR)/Application.mk
