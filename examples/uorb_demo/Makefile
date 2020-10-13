@@ -1,7 +1,7 @@
 ############################################################################
-# apps/examples/hello/Makefile
+# apps/examples/helloxx/Makefile
 #
-#   Copyright (C) 2008, 2010-2013 Gregory Nutt. All rights reserved.
+#   Copyright (C) 2009-2012 Gregory Nutt. All rights reserved.
 #   Author: Gregory Nutt <gnutt@nuttx.org>
 #
 # Redistribution and use in source and binary forms, with or without
@@ -35,15 +35,15 @@
 
 include $(APPDIR)/Make.defs
 
-# Hello, World! built-in application info
+# Hello, World! C++ Example
 
-PROGNAME  = $(CONFIG_HELLO_ANDRES_PROGNAME)
-PRIORITY  = $(CONFIG_HELLO_ANDRES_PRIORITY)
-STACKSIZE = $(CONFIG_HELLO_ANDRES_STACKSIZE)
-MODULE    = $(CONFIG_HELLO_ANDRES)
+MAINSRC = uorb_main.cxx
 
-# Hello, World! Example
+# helloxx built-in application info
 
-MAINSRCS = hello_andres.cxx
+PROGNAME = uorb_demo
+PRIORITY = SCHED_PRIORITY_DEFAULT
+STACKSIZE = $(CONFIG_DEFAULT_TASK_STACKSIZE)
+MODULE = $(CONFIG_UORB_DEMO)
 
 include $(APPDIR)/Application.mk
