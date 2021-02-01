@@ -1,35 +1,20 @@
 /****************************************************************************
- *
  * apps/system/nxrecorder/nxrecorder_main.c
- *   Copyright (C) 2017 Pinecone Inc. All rights reserved.
- *   Author: Zhong An <zhongan@pinecone.net>
  *
- * Redistribution and use in source and binary forms, with or without
- * modification, are permitted provided that the following conditions
- * are met:
+ * Licensed to the Apache Software Foundation (ASF) under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.  The
+ * ASF licenses this file to you under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance with the
+ * License.  You may obtain a copy of the License at
  *
- * 1. Redistributions of source code must retain the above copyright
- *    notice, this list of conditions and the following disclaimer.
- * 2. Redistributions in binary form must reproduce the above copyright
- *    notice, this list of conditions and the following disclaimer in
- *    the documentation and/or other materials provided with the
- *    distribution.
- * 3. Neither the name NuttX nor the names of its contributors may be
- *    used to endorse or promote products derived from this software
- *    without specific prior written permission.
+ *   http://www.apache.org/licenses/LICENSE-2.0
  *
- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
- * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
- * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS
- * FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE
- * COPYRIGHT OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT,
- * INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING,
- * BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS
- * OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED
- * AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT
- * LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN
- * ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
- * POSSIBILITY OF SUCH DAMAGE.
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+ * WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.  See the
+ * License for the specific language governing permissions and limitations
+ * under the License.
  *
  ****************************************************************************/
 
@@ -58,7 +43,7 @@
 #define NXRECORDER_VER          "1.00"
 
 #ifdef CONFIG_NXRECORDER_INCLUDE_HELP
-#  define NXRECORDER_HELP_TEXT(x)  #x
+#  define NXRECORDER_HELP_TEXT(x)  x
 #else
 #  define NXRECORDER_HELP_TEXT(x)
 #endif
@@ -113,40 +98,40 @@ static const struct mp_cmd_s g_nxrecorder_cmds[] =
     "device",
     "devfile",
     nxrecorder_cmd_device,
-    NXRECORDER_HELP_TEXT(Specify a preferred audio device)
+    NXRECORDER_HELP_TEXT("Specify a preferred audio device")
   },
 #ifdef CONFIG_NXRECORDER_INCLUDE_HELP
   {
     "h",
     "",
     nxrecorder_cmd_help,
-    NXRECORDER_HELP_TEXT(Display help for commands)
+    NXRECORDER_HELP_TEXT("Display help for commands")
   },
   {
     "help",
     "",
     nxrecorder_cmd_help,
-    NXRECORDER_HELP_TEXT(Display help for commands)
+    NXRECORDER_HELP_TEXT("Display help for commands")
   },
 #endif
   {
     "recordraw",
     "filename",
     nxrecorder_cmd_recordraw,
-    NXRECORDER_HELP_TEXT(Record a pcm raw file)
+    NXRECORDER_HELP_TEXT("Record a pcm raw file")
   },
 #ifndef CONFIG_AUDIO_EXCLUDE_PAUSE_RESUME
   {
     "pause",
     "",
     nxrecorder_cmd_pause,
-    NXRECORDER_HELP_TEXT(Pause record)
+    NXRECORDER_HELP_TEXT("Pause record")
   },
   {
     "resume",
     "",
     nxrecorder_cmd_resume,
-    NXRECORDER_HELP_TEXT(Resume record)
+    NXRECORDER_HELP_TEXT("Resume record")
   },
 #endif
 #ifndef CONFIG_AUDIO_EXCLUDE_STOP
@@ -154,20 +139,20 @@ static const struct mp_cmd_s g_nxrecorder_cmds[] =
     "stop",
     "",
     nxrecorder_cmd_stop,
-    NXRECORDER_HELP_TEXT(Stop record)
+    NXRECORDER_HELP_TEXT("Stop record")
   },
 #endif
   {
     "q",
     "",
     nxrecorder_cmd_quit,
-    NXRECORDER_HELP_TEXT(Exit NxRecorder)
+    NXRECORDER_HELP_TEXT("Exit NxRecorder")
   },
   {
     "quit",
     "",
     nxrecorder_cmd_quit,
-    NXRECORDER_HELP_TEXT(Exit NxRecorder)
+    NXRECORDER_HELP_TEXT("Exit NxRecorder")
   },
 };
 
@@ -193,9 +178,11 @@ static int nxrecorder_cmd_recordraw(FAR struct nxrecorder_s *precorder,
   int channels = 0;
   int bpsamp = 0;
   int samprate = 0;
+  int chmap = 0;
   char filename[128];
 
-  sscanf(parg, "%s %d %d %d", filename, &channels, &bpsamp, &samprate);
+  sscanf(parg, "%s %d %d %d %d", filename, &channels, &bpsamp,
+                                 &samprate, &chmap);
 
   /* Try to record the file specified */
 
@@ -203,7 +190,8 @@ static int nxrecorder_cmd_recordraw(FAR struct nxrecorder_s *precorder,
                              filename,
                              channels,
                              bpsamp,
-                             samprate);
+                             samprate,
+                             chmap);
 
   /* nxrecorder_recordfile returned values:
    *

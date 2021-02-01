@@ -1,35 +1,20 @@
 /****************************************************************************
  * apps/system/nxrecorder/nxrecorder.c
  *
- *   Copyright (C) 2017 Pinecone Inc. All rights reserved.
- *   Author: Zhong An <zhongan@pinecone.net>
+ * Licensed to the Apache Software Foundation (ASF) under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.  The
+ * ASF licenses this file to you under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance with the
+ * License.  You may obtain a copy of the License at
  *
- * Redistribution and use in source and binary forms, with or without
- * modification, are permitted provided that the following conditions
- * are met:
+ *   http://www.apache.org/licenses/LICENSE-2.0
  *
- * 1. Redistributions of source code must retain the above copyright
- *    notice, this list of conditions and the following disclaimer.
- * 2. Redistributions in binary form must reproduce the above copyright
- *    notice, this list of conditions and the following disclaimer in
- *    the documentation and/or other materials provided with the
- *    distribution.
- * 3. Neither the name NuttX nor the names of its contributors may be
- *    used to endorse or promote products derived from this software
- *    without specific prior written permission.
- *
- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
- * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
- * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS
- * FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE
- * COPYRIGHT OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT,
- * INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING,
- * BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS
- * OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED
- * AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT
- * LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN
- * ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
- * POSSIBILITY OF SUCH DAMAGE.
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+ * WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.  See the
+ * License for the specific language governing permissions and limitations
+ * under the License.
  *
  ****************************************************************************/
 
@@ -63,14 +48,6 @@
 #define NXRECORDER_STATE_IDLE      0
 #define NXRECORDER_STATE_RECORDING 1
 #define NXRECORDER_STATE_PAUSED    2
-
-#ifndef CONFIG_AUDIO_NUM_BUFFERS
-#  define CONFIG_AUDIO_NUM_BUFFERS  2
-#endif
-
-#ifndef CONFIG_AUDIO_BUFFER_NUMBYTES
-#  define CONFIG_AUDIO_BUFFER_NUMBYTES  8192
-#endif
 
 #ifndef CONFIG_NXRECORDER_MSG_PRIO
 #  define CONFIG_NXRECORDER_MSG_PRIO  1
@@ -253,12 +230,8 @@ static void *nxrecorder_recordthread(pthread_addr_t pvarg)
   bool                        running = true;
   bool                        streaming = true;
   bool                        failed = false;
-#ifdef CONFIG_AUDIO_DRIVER_SPECIFIC_BUFFERS
   struct ap_buffer_info_s     buf_info;
   FAR struct ap_buffer_s      **pbuffers;
-#else
-  FAR struct ap_buffer_s      *pbuffers[CONFIG_AUDIO_NUM_BUFFERS];
-#endif
   unsigned int                prio;
 #ifdef CONFIG_DEBUG_FEATURES
   int                         outstanding = 0;
@@ -270,7 +243,6 @@ static void *nxrecorder_recordthread(pthread_addr_t pvarg)
 
   /* Query the audio device for it's preferred buffer size / qty */
 
-#ifdef CONFIG_AUDIO_DRIVER_SPECIFIC_BUFFERS
   if ((ret = ioctl(precorder->dev_fd, AUDIOIOC_GETBUFFERINFO,
           (unsigned long) &buf_info)) != OK)
     {
@@ -301,26 +273,14 @@ static void *nxrecorder_recordthread(pthread_addr_t pvarg)
     }
 
   for (x = 0; x < buf_info.nbuffers; x++)
-#else /* CONFIG_AUDIO_DRIVER_SPECIFIC_BUFFER */
-
-  for (x = 0; x < CONFIG_AUDIO_NUM_BUFFERS; x++)
-    {
-      pbuffers[x] = NULL;
-    }
-
-  for (x = 0; x < CONFIG_AUDIO_NUM_BUFFERS; x++)
-#endif /* CONFIG_AUDIO_DRIVER_SPECIFIC_BUFFER */
     {
       /* Fill in the buffer descriptor struct to issue an alloc request */
 
 #ifdef CONFIG_AUDIO_MULTI_SESSION
       buf_desc.session = precorder->session;
 #endif
-#ifdef CONFIG_AUDIO_DRIVER_SPECIFIC_BUFFERS
+
       buf_desc.numbytes = buf_info.buffer_size;
-#else
-      buf_desc.numbytes = CONFIG_AUDIO_BUFFER_NUMBYTES;
-#endif
       buf_desc.u.pbuffer = &pbuffers[x];
 
       ret = ioctl(precorder->dev_fd, AUDIOIOC_ALLOCBUFFER,
@@ -337,11 +297,7 @@ static void *nxrecorder_recordthread(pthread_addr_t pvarg)
 
   /* Fill up the pipeline with enqueued buffers */
 
-#ifdef CONFIG_AUDIO_DRIVER_SPECIFIC_BUFFERS
   for (x = 0; x < buf_info.nbuffers; x++)
-#else
-  for (x = 0; x < CONFIG_AUDIO_NUM_BUFFERS; x++)
-#endif
     {
       /* Write the next buffer of data */
 
@@ -563,7 +519,6 @@ static void *nxrecorder_recordthread(pthread_addr_t pvarg)
 err_out:
   audinfo("Clean-up and exit\n");
 
-#ifdef CONFIG_AUDIO_DRIVER_SPECIFIC_BUFFERS
   if (pbuffers != NULL)
     {
       audinfo("Freeing buffers\n");
@@ -587,24 +542,6 @@ err_out:
 
       free(pbuffers);
     }
-#else
-    audinfo("Freeing buffers\n");
-    for (x = 0; x < CONFIG_AUDIO_NUM_BUFFERS; x++)
-      {
-        /* Fill in the buffer descriptor struct to issue a free request */
-
-        if (pbuffers[x] != NULL)
-          {
-#ifdef CONFIG_AUDIO_MULTI_SESSION
-            buf_desc.session = pplayer->session;
-#endif
-            buf_desc.u.pbuffer = pbuffers[x];
-            ioctl(precorder->dev_fd,
-                  AUDIOIOC_FREEBUFFER,
-                  (unsigned long) &buf_desc);
-          }
-      }
-#endif
 
   /* Unregister the message queue and release the session */
 
@@ -812,6 +749,7 @@ int nxrecorder_stop(FAR struct nxrecorder_s *precorder)
  *   nchannels  channel num
  *   bpsampe    bit width
  *   samprate   sample rate
+ *   chmap      channel map
  *
  * Returns:
  *   OK         File is being recorded
@@ -824,7 +762,7 @@ int nxrecorder_stop(FAR struct nxrecorder_s *precorder)
 
 int nxrecorder_recordraw(FAR struct nxrecorder_s *precorder,
                          FAR const char *pfilename, uint8_t nchannels,
-                         uint8_t bpsamp, uint32_t samprate)
+                         uint8_t bpsamp, uint32_t samprate, uint8_t chmap)
 {
   struct mq_attr           attr;
   struct sched_param       sparam;
@@ -847,7 +785,7 @@ int nxrecorder_recordraw(FAR struct nxrecorder_s *precorder,
 
   /* Test that the specified file exists */
 
-  if ((precorder->fd = open(pfilename, O_WRONLY | O_CREAT)) == -1)
+  if ((precorder->fd = open(pfilename, O_WRONLY | O_CREAT | O_TRUNC)) == -1)
     {
       /* File not found.  Test if its in the mediadir */
 
@@ -889,6 +827,7 @@ int nxrecorder_recordraw(FAR struct nxrecorder_s *precorder,
   cap_desc.caps.ac_len = sizeof(struct audio_caps_s);
   cap_desc.caps.ac_type = AUDIO_TYPE_INPUT;
   cap_desc.caps.ac_channels = nchannels ? nchannels : 2;
+  cap_desc.caps.ac_chmap    = chmap;
   cap_desc.caps.ac_controls.hw[0] = samprate ? samprate : 48000;
   cap_desc.caps.ac_controls.b[3] = samprate >> 16;
   cap_desc.caps.ac_controls.b[2]  = bpsamp ? bpsamp : 16;

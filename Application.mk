@@ -35,8 +35,6 @@
 #
 ############################################################################
 
-include $(APPDIR)/Make.defs
-
 # If this is an executable program (with MAINSRC), we must build it as a
 # loadable module for the KERNEL build (always) or if the tristate module
 # has the value "m"
@@ -61,38 +59,47 @@ else
 CWD = $(CURDIR)
 endif
 
+ifeq ($(CONFIG_CYGWIN_WINTOOL),y)
+  LDLIBS += "${shell cygpath -w $(BIN)}"
+else
+  LDLIBS += $(BIN)
+endif
+
 SUFFIX = $(subst $(DELIM),.,$(CWD))
 PROGNAME := $(shell echo $(PROGNAME))
 
 # Object files
 
-AOBJS = $(ASRCS:.S=$(SUFFIX)$(OBJEXT))
+RASRCS = $(filter %.s,$(ASRCS))
+CASRCS = $(filter %.S,$(ASRCS))
+
+RAOBJS = $(RASRCS:.s=$(SUFFIX)$(OBJEXT))
+CAOBJS = $(CASRCS:.S=$(SUFFIX)$(OBJEXT))
 COBJS = $(CSRCS:.c=$(SUFFIX)$(OBJEXT))
 CXXOBJS = $(CXXSRCS:$(CXXEXT)=$(SUFFIX)$(OBJEXT))
 
-ifeq ($(suffix $(MAINSRC)),$(CXXEXT))
-  MAINOBJ = $(MAINSRC:$(CXXEXT)=$(SUFFIX)$(OBJEXT))
-else
-  MAINOBJ = $(MAINSRC:.c=$(SUFFIX)$(OBJEXT))
-endif
+MAINCXXSRCS = $(filter %$(CXXEXT),$(MAINSRC))
+MAINCSRCS = $(filter %.c,$(MAINSRC))
+MAINCXXOBJ = $(MAINCXXSRCS:$(CXXEXT)=$(SUFFIX)$(OBJEXT))
+MAINCOBJ = $(MAINCSRCS:.c=$(SUFFIX)$(OBJEXT))
 
 SRCS = $(ASRCS) $(CSRCS) $(CXXSRCS) $(MAINSRC)
-OBJS = $(AOBJS) $(COBJS) $(CXXOBJS)
+OBJS = $(RAOBJS) $(CAOBJS) $(COBJS) $(CXXOBJS)
 
 ifneq ($(BUILD_MODULE),y)
-  OBJS += $(MAINOBJ)
+  OBJS += $(MAINCOBJ) $(MAINCXXOBJ)
 endif
 
-ROOTDEPPATH += --dep-path .
-ROOTDEPPATH += --obj-path .
-ROOTDEPPATH += --obj-suffix $(SUFFIX)$(OBJEXT)
+DEPPATH += --dep-path .
+DEPPATH += --obj-path .
+DEPPATH += --obj-suffix $(SUFFIX)$(OBJEXT)
 
 VPATH += :.
 
 # Targets follow
 
-all:: .built
-.PHONY: clean preconfig depend distclean
+all:: $(OBJS)
+.PHONY: clean depend distclean
 .PRECIOUS: $(BIN)
 
 define ELFASSEMBLE
@@ -115,7 +122,11 @@ define ELFLD
 	$(Q) $(LD) $(LDELFFLAGS) $(LDLIBPATH) $(ARCHCRT0OBJ) $1 $(LDLIBS) -o $2
 endef
 
-$(AOBJS): %$(SUFFIX)$(OBJEXT): %.S
+$(RAOBJS): %$(SUFFIX)$(OBJEXT): %.s
+	$(if $(and $(CONFIG_BUILD_LOADABLE),$(AELFFLAGS)), \
+		$(call ELFASSEMBLE, $<, $@), $(call ASSEMBLE, $<, $@))
+
+$(CAOBJS): %$(SUFFIX)$(OBJEXT): %.S
 	$(if $(and $(CONFIG_BUILD_LOADABLE),$(AELFFLAGS)), \
 		$(call ELFASSEMBLE, $<, $@), $(call ASSEMBLE, $<, $@))
 
@@ -127,37 +138,35 @@ $(CXXOBJS): %$(SUFFIX)$(OBJEXT): %$(CXXEXT)
 	$(if $(and $(CONFIG_BUILD_LOADABLE),$(CXXELFFLAGS)), \
 		$(call ELFCOMPILEXX, $<, $@), $(call COMPILEXX, $<, $@))
 
-.built: $(OBJS)
+archive:
 ifeq ($(CONFIG_CYGWIN_WINTOOL),y)
-	$(call ARLOCK, "${shell cygpath -w $(BIN)}", $(OBJS))
+	$(call ARCHIVE_ADD, "${shell cygpath -w $(BIN)}", $(OBJS))
 else
-	$(call ARLOCK, $(BIN), $(OBJS))
+	$(call ARCHIVE_ADD, $(BIN), $(OBJS))
 endif
-	$(Q) touch $@
 
 ifeq ($(BUILD_MODULE),y)
 
-ifeq ($(suffix $(MAINSRC)),$(CXXEXT))
-$(MAINOBJ): %$(SUFFIX)$(OBJEXT): %$(CXXEXT)
+$(MAINCXXOBJ): %$(SUFFIX)$(OBJEXT): %$(CXXEXT)
 	$(if $(and $(CONFIG_BUILD_LOADABLE),$(CXXELFFLAGS)), \
 		$(call ELFCOMPILEXX, $<, $@), $(call COMPILEXX, $<, $@))
-else
-$(MAINOBJ): %$(SUFFIX)$(OBJEXT): %.c
+
+$(MAINCOBJ): %$(SUFFIX)$(OBJEXT): %.c
 	$(if $(and $(CONFIG_BUILD_LOADABLE),$(CELFFLAGS)), \
 		$(call ELFCOMPILE, $<, $@), $(call COMPILE, $<, $@))
-endif
 
-PROGLIST := $(wordlist 1,$(words $(MAINOBJ)),$(PROGNAME))
+PROGLIST := $(wordlist 1,$(words $(MAINCOBJ) $(MAINCXXOBJ)),$(PROGNAME))
 PROGLIST := $(addprefix $(BINDIR)$(DELIM),$(PROGLIST))
-PROGOBJ := $(MAINOBJ)
+PROGOBJ := $(MAINCOBJ) $(MAINCXXOBJ)
 
-$(PROGLIST): $(MAINOBJ)
+$(PROGLIST): $(MAINCOBJ) $(MAINCXXOBJ)
 	$(Q) mkdir -p $(BINDIR)
 ifeq ($(CONFIG_CYGWIN_WINTOOL),y)
 	$(call ELFLD,$(firstword $(PROGOBJ)),"${shell cygpath -w $(firstword $(PROGLIST))}")
 else
 	$(call ELFLD,$(firstword $(PROGOBJ)),$(firstword $(PROGLIST)))
 endif
+	$(Q) chmod +x $(firstword $(PROGLIST))
 ifneq ($(CONFIG_DEBUG_SYMBOLS),y)
 	$(Q) $(STRIP) $(firstword $(PROGLIST))
 endif
@@ -170,27 +179,25 @@ else
 
 MAINNAME := $(addsuffix _main,$(PROGNAME))
 
-ifeq ($(suffix $(MAINSRC)),$(CXXEXT))
-$(MAINOBJ): %$(SUFFIX)$(OBJEXT): %$(CXXEXT)
+$(MAINCXXOBJ): %$(SUFFIX)$(OBJEXT): %$(CXXEXT)
 	$(eval $<_CXXFLAGS += ${shell $(DEFINE) "$(CXX)" main=$(firstword $(MAINNAME))})
 	$(eval $<_CXXELFFLAGS += ${shell $(DEFINE) "$(CXX)" main=$(firstword $(MAINNAME))})
 	$(eval MAINNAME=$(filter-out $(firstword $(MAINNAME)),$(MAINNAME)))
 	$(if $(and $(CONFIG_BUILD_LOADABLE),$(CXXELFFLAGS)), \
 		$(call ELFCOMPILEXX, $<, $@), $(call COMPILEXX, $<, $@))
-else
-$(MAINOBJ): %$(SUFFIX)$(OBJEXT): %.c
+
+$(MAINCOBJ): %$(SUFFIX)$(OBJEXT): %.c
 	$(eval $<_CFLAGS += ${shell $(DEFINE) "$(CC)" main=$(firstword $(MAINNAME))})
 	$(eval $<_CELFFLAGS += ${shell $(DEFINE) "$(CC)" main=$(firstword $(MAINNAME))})
 	$(eval MAINNAME=$(filter-out $(firstword $(MAINNAME)),$(MAINNAME)))
 	$(if $(and $(CONFIG_BUILD_LOADABLE),$(CELFFLAGS)), \
 		$(call ELFCOMPILE, $<, $@), $(call COMPILE, $<, $@))
-endif
 
 install::
 
 endif # BUILD_MODULE
 
-preconfig::
+context::
 
 ifeq ($(CONFIG_NSH_BUILTIN_APPS),y)
 ifneq ($(PROGNAME),)
@@ -206,32 +213,31 @@ $(REGLIST): $(DEPCONFIG) Makefile
 	$(if $(filter-out $(firstword $(PRIORITY)),$(PRIORITY)),$(eval PRIORITY=$(filter-out $(firstword $(PRIORITY)),$(PRIORITY))))
 	$(if $(filter-out $(firstword $(STACKSIZE)),$(STACKSIZE)),$(eval STACKSIZE=$(filter-out $(firstword $(STACKSIZE)),$(STACKSIZE))))
 
-context:: $(REGLIST)
+register:: $(REGLIST)
 else
-context::
+register::
 endif
 else
-context::
+register::
 endif
 else
-context::
+register::
 endif
 else
-context::
+register::
 endif
 
-.depend: Makefile $(wildcard $(foreach SRC, $(SRCS), $(addsuffix /$(SRC), $(subst :, ,$(VPATH)))))
+.depend: Makefile $(wildcard $(foreach SRC, $(SRCS), $(addsuffix /$(SRC), $(subst :, ,$(VPATH))))) $(DEPCONFIG)
 ifeq ($(filter %$(CXXEXT),$(SRCS)),)
-	$(Q) $(MKDEP) $(ROOTDEPPATH) "$(CC)" -- $(CFLAGS) -- $(filter-out Makefile,$^) >Make.dep
+	$(Q) $(MKDEP) $(DEPPATH) "$(CC)" -- $(CFLAGS) -- $(filter-out Makefile,$(filter-out $(DEPCONFIG),$^)) >Make.dep
 else
-	$(Q) $(MKDEP) $(ROOTDEPPATH) "$(CXX)" -- $(CXXFLAGS) -- $(filter-out Makefile,$^) >Make.dep
+	$(Q) $(MKDEP) $(DEPPATH) "$(CXX)" -- $(CXXFLAGS) -- $(filter-out Makefile,$(filter-out $(DEPCONFIG),$^)) >Make.dep
 endif
 	$(Q) touch $@
 
 depend:: .depend
 
 clean::
-	$(call DELFILE, .built)
 	$(call CLEAN)
 
 distclean:: clean

@@ -33,7 +33,7 @@
 #
 ############################################################################
 
-include $(TOPDIR)/Make.defs
+include $(APPDIR)/Make.defs
 
 # ELF Example
 
@@ -46,7 +46,7 @@ PRIORITY = SCHED_PRIORITY_DEFAULT
 STACKSIZE = $(CONFIG_DEFAULT_TASK_STACKSIZE)
 MODULE = $(CONFIG_EXAMPLES_POSIXSPAWN)
 
-ROOTDEPPATH	+= --dep-path filesystem
+DEPPATH	+= --dep-path filesystem
 
 # Build targets
 

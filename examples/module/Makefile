@@ -33,7 +33,7 @@
 #
 ############################################################################
 
-include $(TOPDIR)/Make.defs
+include $(APPDIR)/Make.defs
 
 # Module example built-in application info
 
@@ -54,7 +54,7 @@ CSRCS += mod_symtab.c
 MAINSRC = module_main.c
 
 VPATH += drivers
-ROOTDEPPATH += --dep-path drivers
+DEPPATH += --dep-path drivers
 
 # Build targets
 

@@ -33,13 +33,12 @@
 #
 ############################################################################
 
-include $(TOPDIR)/Make.defs
+include $(APPDIR)/Make.defs
 
 CONFIG_ARCH_BOARD ?= dummy
 
 # Directories
 
-GNUDIR      = gnu
 PLATFORMDIR = board
 DUMMYDIR    = $(APPDIR)/platform/dummy
 
@@ -51,14 +50,12 @@ else
 endif
 
 VPATH       += board
-ROOTDEPPATH += --obj-path bin
-ROOTDEPPATH += --obj-suffix $(OBJEXT)
-ROOTDEPPATH += --dep-path $(PLATFORMDIR)
-ROOTDEPPATH += --dep-path $(GNUDIR)
+DEPPATH += --obj-path bin
+DEPPATH += --obj-suffix $(OBJEXT)
+DEPPATH += --dep-path $(PLATFORMDIR)
 
 # Binaries
 
--include $(GNUDIR)$(DELIM)Make.defs
 -include $(PLATFORMDIR)$(DELIM)Make.defs
 
 # Build context setup

@@ -50,8 +50,6 @@
 #  include <nuttx/symtab.h>
 #endif
 
-#include "platform/cxxinitialize.h"
-
 #include "nshlib/nshlib.h"
 
 /****************************************************************************
@@ -78,12 +76,6 @@
 
 #ifdef CONFIG_EXECFUNCS_HAVE_SYMTAB
 #  undef CONFIG_SYSTEM_NSH_SYMTAB
-#endif
-
-/* C++ initialization requires CXX initializer support */
-
-#if !defined(CONFIG_HAVE_CXX) || !defined(CONFIG_HAVE_CXXINITIALIZE)
-#  undef CONFIG_SYSTEM_NSH_CXXINITIALIZE
 #endif
 
 /* The NSH telnet console requires networking support (and TCP/IP) */
@@ -137,12 +129,6 @@ int main(int argc, FAR char *argv[])
       sched_setparam(0, &param);
     }
 
-#if defined(CONFIG_SYSTEM_NSH_CXXINITIALIZE)
-  /* Call all C++ static constructors */
-
-  up_cxxinitialize();
-#endif
-
 #if defined(CONFIG_SYSTEM_NSH_SYMTAB)
   /* Make sure that we are using our symbol table */
 
@@ -179,7 +165,7 @@ int main(int argc, FAR char *argv[])
 #ifdef CONFIG_NSH_CONSOLE
   /* If the serial console front end is selected, run it on this thread */
 
-  ret = nsh_consolemain(0, NULL);
+  ret = nsh_consolemain(argc, argv);
 
   /* nsh_consolemain() should not return.  So if we get here, something
    * is wrong.

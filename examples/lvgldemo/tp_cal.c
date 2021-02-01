@@ -39,7 +39,7 @@
 
 #include <stdio.h>
 
-#include <graphics/lvgl.h>
+#include <lvgl/lvgl.h>
 #include "tp.h"
 
 /****************************************************************************
@@ -76,10 +76,11 @@ static void btn_click_action(FAR lv_obj_t *scr, lv_event_t event);
 
 static enum tp_cal_state_e state;
 static lv_point_t p[4];
-static lv_obj_t *prev_scr;
-static lv_obj_t *big_btn;
-static lv_obj_t *label_main;
-static lv_obj_t *circ_area;
+static lv_obj_t   *prev_scr;
+static lv_obj_t   *big_btn;
+static lv_obj_t   *label_main;
+static lv_obj_t   *circ_area;
+static lv_theme_t *prev_theme;
 
 /****************************************************************************
  * Public Functions
@@ -125,25 +126,13 @@ static void btn_click_action(FAR lv_obj_t *scr, lv_event_t event)
                         (LV_VER_RES - lv_obj_get_height(label_main)) / 2);
 
 #if LV_USE_ANIMATION
-          a.var            = circ_area;
-          a.start          = 0;
-          a.end            = LV_HOR_RES - CIRCLE_SIZE;
-          a.exec_cb        = (lv_anim_exec_xcb_t)lv_obj_set_x;
-          a.path_cb        = (lv_anim_path_cb_t)lv_anim_path_linear;
-          a.ready_cb       = NULL;
-          a.act_time       = 0;
-          a.time           = 200;
-          a.playback       = 0;
-          a.playback_pause = 0;
-          a.repeat         = 0;
-          a.repeat_pause   = 0;
-          lv_anim_create(&a);
-          a.start          = 0;
-          a.end            = 0;
-          a.exec_cb        = (lv_anim_exec_xcb_t)lv_obj_set_y;
-          a.ready_cb       = NULL;
-          a.time           = 200;
-          lv_anim_create(&a);
+          lv_anim_init(&a);
+          lv_anim_set_var(&a, circ_area);
+          lv_anim_set_exec_cb(&a, (lv_anim_exec_xcb_t)lv_obj_set_x);
+          lv_anim_set_time(&a, 500);
+          lv_anim_set_values(&a, 0, LV_HOR_RES - CIRCLE_SIZE);
+          lv_anim_set_delay(&a, 200);
+          lv_anim_start(&a);
 #else
           lv_obj_set_pos(circ_area, LV_HOR_RES - CIRCLE_SIZE, 0);
 #endif
@@ -176,26 +165,13 @@ static void btn_click_action(FAR lv_obj_t *scr, lv_event_t event)
                          (LV_VER_RES - lv_obj_get_height(label_main)) / 2);
 
 #if LV_USE_ANIMATION
-          a.var            = circ_area;
-          a.start          = LV_HOR_RES - CIRCLE_SIZE;
-          a.end            = LV_HOR_RES - CIRCLE_SIZE;
-          a.exec_cb        = (lv_anim_exec_xcb_t)lv_obj_set_x;
-          a.path_cb        = (lv_anim_path_cb_t)lv_anim_path_linear;
-          a.ready_cb       = NULL;
-          a.act_time       = 0;
-          a.time           = 200;
-          a.playback       = 0;
-          a.playback_pause = 0;
-          a.repeat         = 0;
-          a.repeat_pause   = 0;
-          lv_anim_create(&a);
-
-          a.start          = 0;
-          a.end            = LV_VER_RES - CIRCLE_SIZE;
-          a.exec_cb        = (lv_anim_exec_xcb_t)lv_obj_set_y;
-          a.ready_cb       = NULL;
-          a.time           = 200;
-          lv_anim_create(&a);
+          lv_anim_init(&a);
+          lv_anim_set_var(&a, circ_area);
+          lv_anim_set_exec_cb(&a, (lv_anim_exec_xcb_t)lv_obj_set_y);
+          lv_anim_set_time(&a, 500);
+          lv_anim_set_values(&a, 0, LV_VER_RES - CIRCLE_SIZE);
+          lv_anim_set_delay(&a, 200);
+          lv_anim_start(&a);
 #else
           lv_obj_set_pos(circ_area,
                         LV_HOR_RES - CIRCLE_SIZE, LV_VER_RES - CIRCLE_SIZE);
@@ -227,26 +203,13 @@ static void btn_click_action(FAR lv_obj_t *scr, lv_event_t event)
                         (LV_VER_RES - lv_obj_get_height(label_main)) / 2);
 
 #if LV_USE_ANIMATION
-          a.var            = circ_area;
-          a.start          = LV_HOR_RES - CIRCLE_SIZE;
-          a.end            = 0;
-          a.exec_cb        = (lv_anim_exec_xcb_t)lv_obj_set_x;
-          a.path_cb        = (lv_anim_path_cb_t)lv_anim_path_linear;
-          a.ready_cb       = NULL;
-          a.act_time       = 0;
-          a.time           = 200;
-          a.playback       = 0;
-          a.playback_pause = 0;
-          a.repeat         = 0;
-          a.repeat_pause   = 0;
-          lv_anim_create(&a);
-
-          a.start         = LV_VER_RES - CIRCLE_SIZE;
-          a.end           = LV_VER_RES - CIRCLE_SIZE;
-          a.exec_cb       = (lv_anim_exec_xcb_t) lv_obj_set_y;
-          a.ready_cb      = NULL;
-          a.time          = 200;
-          lv_anim_create(&a);
+          lv_anim_init(&a);
+          lv_anim_set_var(&a, circ_area);
+          lv_anim_set_exec_cb(&a, (lv_anim_exec_xcb_t)lv_obj_set_x);
+          lv_anim_set_time(&a, 500);
+          lv_anim_set_values(&a, LV_HOR_RES - CIRCLE_SIZE, 0);
+          lv_anim_set_delay(&a, 200);
+          lv_anim_start(&a);
 #else
           lv_obj_set_pos(circ_area, 0, LV_VER_RES - CIRCLE_SIZE);
 #endif
@@ -279,6 +242,7 @@ static void btn_click_action(FAR lv_obj_t *scr, lv_event_t event)
         }
       else if (state == TP_CAL_STATE_WAIT_LEAVE)
         {
+          lv_theme_set_act(prev_theme);
           lv_scr_load(prev_scr);
           tp_set_cal_values(&p[0], &p[1], &p[2], &p[3]);
           state = TP_CAL_STATE_READY;
@@ -310,6 +274,7 @@ static void btn_click_action(FAR lv_obj_t *scr, lv_event_t event)
 void tp_cal_create(void)
 {
   static lv_style_t style_circ;
+  static lv_style_t style_big_btn;
 #if LV_USE_ANIMATION
   lv_anim_t a;
 #endif
@@ -317,6 +282,17 @@ void tp_cal_create(void)
   state = TP_CAL_STATE_INIT;
 
   prev_scr = lv_scr_act();
+
+  lv_theme_t *theme = LV_THEME_DEFAULT_INIT(LV_THEME_DEFAULT_COLOR_PRIMARY,
+                        LV_THEME_DEFAULT_COLOR_SECONDARY,
+                        LV_THEME_DEFAULT_FLAG,
+                        LV_THEME_DEFAULT_FONT_SMALL,
+                        LV_THEME_DEFAULT_FONT_NORMAL,
+                        LV_THEME_DEFAULT_FONT_SUBTITLE,
+                        LV_THEME_DEFAULT_FONT_TITLE);
+
+  prev_theme = lv_theme_get_act();
+  lv_theme_set_act(theme);
 
   lv_obj_t *scr = lv_obj_create(NULL, NULL);
   lv_obj_set_size(scr, TP_MAX_VALUE, TP_MAX_VALUE);
@@ -326,8 +302,13 @@ void tp_cal_create(void)
 
   big_btn = lv_btn_create(lv_scr_act(), NULL);
   lv_obj_set_size(big_btn, TP_MAX_VALUE, TP_MAX_VALUE);
-  lv_btn_set_style(big_btn, LV_BTN_STYLE_REL, &lv_style_transp);
-  lv_btn_set_style(big_btn, LV_BTN_STYLE_PR, &lv_style_transp);
+
+  lv_style_init(&style_big_btn);
+
+  lv_style_set_bg_opa(&style_big_btn, LV_STATE_DEFAULT | LV_STATE_PRESSED,
+                      LV_OPA_TRANSP);
+  lv_obj_add_style(big_btn, LV_BTN_PART_MAIN, &style_big_btn);
+
   lv_obj_set_event_cb(big_btn, btn_click_action);
   lv_btn_set_layout(big_btn, LV_LAYOUT_OFF);
 
@@ -339,35 +320,28 @@ void tp_cal_create(void)
   lv_obj_set_pos(label_main, (LV_HOR_RES - lv_obj_get_width(label_main)) / 2,
                  (LV_VER_RES - lv_obj_get_height(label_main)) / 2);
 
-  lv_style_copy(&style_circ, &lv_style_pretty_color);
-  style_circ.body.radius = LV_RADIUS_CIRCLE;
-
+  lv_style_init(&style_circ);
+  lv_style_set_radius(&style_circ, LV_STATE_DEFAULT,
+                      LV_RADIUS_CIRCLE);
+  lv_style_set_bg_color(&style_circ, LV_STATE_DEFAULT,
+                      LV_COLOR_BLUE);
   circ_area = lv_obj_create(lv_scr_act(), NULL);
   lv_obj_set_size(circ_area, CIRCLE_SIZE, CIRCLE_SIZE);
-  lv_obj_set_style(circ_area, &style_circ);
+  lv_obj_add_style(circ_area, LV_OBJ_PART_MAIN, &style_circ);
   lv_obj_set_click(circ_area, false);
 
 #if LV_USE_ANIMATION
-  a.var            = circ_area;
-  a.start          = LV_HOR_RES / 2;
-  a.end            = 0;
-  a.exec_cb        = (lv_anim_exec_xcb_t)lv_obj_set_x;
-  a.path_cb        = (lv_anim_path_cb_t)lv_anim_path_linear;
-  a.ready_cb       = NULL;
-  a.act_time       = -500;
-  a.time           = 200;
-  a.playback       = 0;
-  a.playback_pause = 0;
-  a.repeat         = 0;
-  a.repeat_pause   = 0;
-  lv_anim_create(&a);
+  lv_anim_init(&a);
+  lv_anim_set_var(&a, circ_area);
+  lv_anim_set_exec_cb(&a, (lv_anim_exec_xcb_t)lv_obj_set_x);
+  lv_anim_set_time(&a, 200);
+  lv_anim_set_values(&a, LV_HOR_RES / 2, 0);
+  lv_anim_set_delay(&a, 200);
+  lv_anim_start(&a);
 
-  a.start          = LV_VER_RES / 2;
-  a.end            = 0;
-  a.exec_cb        = (lv_anim_exec_xcb_t)lv_obj_set_y;
-  a.ready_cb       = NULL;
-  a.time           = 200;
-  lv_anim_create(&a);
+  lv_anim_set_exec_cb(&a, (lv_anim_exec_xcb_t)lv_obj_set_y);
+  lv_anim_set_values(&a, LV_VER_RES / 2, 0);
+  lv_anim_start(&a);
 #endif
   state = TP_CAL_STATE_WAIT_TOP_LEFT;
 }

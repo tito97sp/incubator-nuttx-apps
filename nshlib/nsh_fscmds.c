@@ -1050,7 +1050,15 @@ int cmd_ln(FAR struct nsh_vtbl_s *vtbl, int argc, char **argv)
       goto errout_with_tgtpath;
     }
 
-  ret = link(tgtpath, linkpath);
+  if (ndx == 1)
+    {
+      ret = link(tgtpath, linkpath);
+    }
+  else
+    {
+      ret = symlink(tgtpath, linkpath);
+    }
+
   if (ret < 0)
     {
       nsh_error(vtbl, g_fmtcmdfailed, argv[0], "link", NSH_ERRNO);
@@ -1352,7 +1360,6 @@ int cmd_mkfifo(FAR struct nsh_vtbl_s *vtbl, int argc, char **argv)
  * Name: cmd_mkrd
  ****************************************************************************/
 
-#ifdef NSH_HAVE_WRITABLE_MOUNTPOINT
 #ifndef CONFIG_NSH_DISABLE_MKRD
 int cmd_mkrd(FAR struct nsh_vtbl_s *vtbl, int argc, char **argv)
 {
@@ -1449,7 +1456,6 @@ errout_with_fmt:
   nsh_output(vtbl, fmt, argv[0]);
   return ERROR;
 }
-#endif
 #endif
 
 /****************************************************************************
@@ -1686,7 +1692,7 @@ int cmd_rmdir(FAR struct nsh_vtbl_s *vtbl, int argc, char **argv)
  * Name: cmd_source
  ****************************************************************************/
 
-#if CONFIG_NFILE_STREAMS > 0 && !defined(CONFIG_NSH_DISABLESCRIPT)
+#if defined(CONFIG_FILE_STREAM) && !defined(CONFIG_NSH_DISABLESCRIPT)
 #ifndef CONFIG_NSH_DISABLE_SOURCE
 int cmd_source(FAR struct nsh_vtbl_s *vtbl, int argc, char **argv)
 {

@@ -53,7 +53,8 @@
  * Preprocessor Definitions
  ****************************************************************************/
 
-/* Configuration Checks ******************************************************/
+/* Configuration Checks *****************************************************/
+
 /* BEWARE:
  * There are other configuration settings needed in netutitls/wget/wgetc.s,
  * but there are default values for those so we cannot check them here.
@@ -88,6 +89,7 @@ static char g_iobuffer[512];
 /****************************************************************************
  * Private Functions
  ****************************************************************************/
+
 /****************************************************************************
  * Name: callback
  ****************************************************************************/
@@ -108,12 +110,13 @@ static void callback(FAR char **buffer, int offset, int datend,
 
 int main(int argc, FAR char *argv[])
 {
+#ifndef CONFIG_NSH_NETINIT
   struct in_addr addr;
 #if defined(CONFIG_EXAMPLES_WGET_NOMAC)
   uint8_t mac[IFHWADDRLEN];
 #endif
 
-/* Many embedded network interfaces must have a software assigned MAC */
+  /* Many embedded network interfaces must have a software assigned MAC */
 
 #ifdef CONFIG_EXAMPLES_WGET_NOMAC
   mac[0] = 0x00;
@@ -145,9 +148,18 @@ int main(int argc, FAR char *argv[])
    */
 
   netlib_ifup("eth0");
+#endif /* CONFIG_NSH_NETINIT */
 
   /* Then start the server */
 
-  wget(CONFIG_EXAMPLES_WGET_URL, g_iobuffer, 512, callback, NULL);
+  if (argc > 1)
+    {
+      wget(argv[1], g_iobuffer, 512, callback, NULL);
+    }
+  else
+    {
+      wget(CONFIG_EXAMPLES_WGET_URL, g_iobuffer, 512, callback, NULL);
+    }
+
   return 0;
 }

@@ -85,7 +85,7 @@ static int  cmd_unrecognized(FAR struct nsh_vtbl_s *vtbl, int argc,
 
 static const struct cmdmap_s g_cmdmap[] =
 {
-#if CONFIG_NFILE_STREAMS > 0 && !defined(CONFIG_NSH_DISABLESCRIPT)
+#if defined(CONFIG_FILE_STREAM) && !defined(CONFIG_NSH_DISABLESCRIPT)
 # ifndef CONFIG_NSH_DISABLE_SOURCE
   { ".",        cmd_source,   2, 2, "<script-path>" },
 # endif
@@ -323,11 +323,9 @@ static const struct cmdmap_s g_cmdmap[] =
 # endif
 #endif
 
-#ifdef NSH_HAVE_WRITABLE_MOUNTPOINT
-# ifndef CONFIG_NSH_DISABLE_MKRD
+#ifndef CONFIG_NSH_DISABLE_MKRD
   { "mkrd",     cmd_mkrd,     2, 6,
     "[-m <minor>] [-s <sector-size>] <nsectors>" },
-# endif
 #endif
 
 #if !defined(CONFIG_DISABLE_MOUNTPOINT) && defined(CONFIG_FS_SMARTFS) && \
@@ -498,7 +496,7 @@ static const struct cmdmap_s g_cmdmap[] =
   { "sleep",    cmd_sleep,    2, 2, "<sec>" },
 #endif
 
-#if CONFIG_NFILE_STREAMS > 0 && !defined(CONFIG_NSH_DISABLESCRIPT)
+#if defined(CONFIG_FILE_STREAM) && !defined(CONFIG_NSH_DISABLESCRIPT)
 # ifndef CONFIG_NSH_DISABLE_SOURCE
   { "source",   cmd_source,   2, 2, "<script-path>" },
 # endif

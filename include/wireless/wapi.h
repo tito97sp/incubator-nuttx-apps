@@ -262,6 +262,7 @@ struct wpa_wconfig_s
   uint8_t phraselen;             /* Length of the passphrase */
   FAR const char *ifname;        /* E.g., "wlan0" */
   FAR const char *ssid;          /* E.g., "myApSSID" */
+  FAR const char *bssid;         /* Options to associate with bssid */
   FAR const char *passphrase;    /* E.g., "mySSIDpassphrase" */
 };
 
@@ -642,6 +643,19 @@ int wapi_make_socket(void);
  ****************************************************************************/
 
 int wapi_scan_init(int sock, FAR const char *ifname, FAR const char *essid);
+
+/****************************************************************************
+ * Name: wapi_scan_channel_init
+ *
+ * Description:
+ *   Starts a scan on the given interface. Root privileges are required to
+ *   start a scan with specified channels.
+ *
+ ****************************************************************************/
+
+int wapi_scan_channel_init(int sock, FAR const char *ifname,
+                           FAR const char *essid,
+                           uint8_t *channels, int num_channels);
 
 /****************************************************************************
  * Name: wapi_scan_stat

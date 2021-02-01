@@ -15,9 +15,8 @@
 *.swp
 *.sym
 *~
-.built
 .depend
-/*.lock
+.kconfig
 /bin
 /boot_romfsimg.h
 /external

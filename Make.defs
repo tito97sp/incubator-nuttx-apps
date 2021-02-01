@@ -34,15 +34,30 @@
 #
 ############################################################################
 
+TOPDIR ?= $(APPDIR)/import
+include $(TOPDIR)/Make.defs
+
+# The GNU make CURDIR will always be a POSIX-like path with forward slashes
+# as path segment separators.  This is fine for the above inclusions but
+# will cause problems later for the native build.  If we know that this is
+# a native build, then we need to fix up the APPDIR path for subsequent
+# use
+
+ifeq ($(CONFIG_WINDOWS_NATIVE),y)
+APPDIR := ${shell echo %CD%}
+endif
+
 # Application Directories
 
 # BUILDIRS is the list of top-level directories containing Make.defs files
 # CLEANDIRS is the list of all top-level directories containing Makefiles.
 #   It is used only for cleaning.
 
-BUILDIRS  := $(dir $(wildcard $(APPDIR)$(DELIM)*$(DELIM)Make.defs))
-BUILDIRS  := $(filter-out $(APPDIR)$(DELIM)import$(DELIM),$(BUILDIRS))
-CLEANDIRS := $(dir $(wildcard $(APPDIR)$(DELIM)*$(DELIM)Makefile))
+BUILDIRS   := $(dir $(wildcard $(APPDIR)$(DELIM)*$(DELIM)Make.defs))
+BUILDIRS   := $(filter-out $(APPDIR)$(DELIM)import$(DELIM),$(BUILDIRS))
+CONFIGDIRS := $(filter-out $(APPDIR)$(DELIM)builtin$(DELIM),$(BUILDIRS))
+CONFIGDIRS := $(filter-out $(dir $(wildcard $(APPDIR)$(DELIM)*$(DELIM)Kconfig)),$(CONFIGDIRS))
+CLEANDIRS  := $(dir $(wildcard $(APPDIR)$(DELIM)*$(DELIM)Makefile))
 
 # CONFIGURED_APPS is the application directories that should be built in
 #   the current configuration.
@@ -93,17 +108,13 @@ define REGISTER
 	$(Q) touch "$(BUILTIN_REGISTRY)$(DELIM).updated"
 endef
 
-define ARLOCK
-	$(Q) flock $1.lock $(call ARCHIVE, $1, $(2))
-endef
-
 # Standard include path
 
 CFLAGS   += ${shell $(INCDIR) "$(CC)" "$(APPDIR)$(DELIM)include"}
 CXXFLAGS += ${shell $(INCDIR) "$(CC)" "$(APPDIR)$(DELIM)include"}
 
 ifeq ($(CONFIG_CYGWIN_WINTOOL),y)
-  LDLIBS ?= "${shell cygpath -w $(BIN)}"
+  NUTTXLIB ?= "${shell cygpath -w $(TOPDIR)$(DELIM)staging}"
 else
-  LDLIBS ?= $(BIN)
+  NUTTXLIB ?= "$(TOPDIR)$(DELIM)staging"
 endif

@@ -1,35 +1,20 @@
 /****************************************************************************
  * examples/nxterm/nxterm_main.c
  *
- *   Copyright (C) 2012, 2016-2017, 2019 Gregory Nutt. All rights reserved.
- *   Author: Gregory Nutt <gnutt@nuttx.org>
+ * Licensed to the Apache Software Foundation (ASF) under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.  The
+ * ASF licenses this file to you under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance with the
+ * License.  You may obtain a copy of the License at
  *
- * Redistribution and use in source and binary forms, with or without
- * modification, are permitted provided that the following conditions
- * are met:
+ *   http://www.apache.org/licenses/LICENSE-2.0
  *
- * 1. Redistributions of source code must retain the above copyright
- *    notice, this list of conditions and the following disclaimer.
- * 2. Redistributions in binary form must reproduce the above copyright
- *    notice, this list of conditions and the following disclaimer in
- *    the documentation and/or other materials provided with the
- *    distribution.
- * 3. Neither the name NuttX nor the names of its contributors may be
- *    used to endorse or promote products derived from this software
- *    without specific prior written permission.
- *
- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
- * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
- * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS
- * FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE
- * COPYRIGHT OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT,
- * INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING,
- * BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS
- * OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED
- * AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT
- * LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN
- * ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
- * POSSIBILITY OF SUCH DAMAGE.
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+ * WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.  See the
+ * License for the specific language governing permissions and limitations
+ * under the License.
  *
  ****************************************************************************/
 
@@ -63,7 +48,6 @@
 #include <nuttx/nx/nxfonts.h>
 #include <nuttx/nx/nxterm.h>
 
-#include "platform/cxxinitialize.h"
 #include "nshlib/nshlib.h"
 
 #include "nxterm_internal.h"
@@ -117,7 +101,8 @@ static int nxterm_initialize(void)
   ret = boardctl(BOARDIOC_NX_START, 0);
   if (ret < 0)
     {
-      printf("nxterm_initialize: Failed to start the NX server: %d\n", errno);
+      printf("nxterm_initialize: Failed to start the NX server: %d\n",
+             errno);
       return ERROR;
     }
 
@@ -145,9 +130,9 @@ static int nxterm_initialize(void)
         }
 #endif
 
-      /* Start a separate thread to listen for server events.  This is probably
-       * the least efficient way to do this, but it makes this example flow more
-       * smoothly.
+      /* Start a separate thread to listen for server events.  This is
+       * probably the least efficient way to do this, but it makes this
+       * example flow more smoothly.
        */
 
       pthread_attr_init(&attr);
@@ -191,7 +176,7 @@ static int nxterm_task(int argc, char **argv)
   /* If the console front end is selected, then run it on this thread */
 
 #ifdef CONFIG_NSH_CONSOLE
-  nsh_consolemain(0, NULL);
+  nsh_consolemain(argc, argv);
 #endif
 
   printf("nxterm_task: Unlinking the NX console device\n");
@@ -229,12 +214,6 @@ int main(int argc, FAR char *argv[])
 
   printf("nxterm_main: Started\n");
   memset(&g_nxterm_vars, 0, sizeof(struct nxterm_state_s));
-
-  /* Call all C++ static constructors */
-
-#if defined(CONFIG_HAVE_CXX) && defined(CONFIG_HAVE_CXXINITIALIZE)
-  up_cxxinitialize();
-#endif
 
   /* NSH Initialization *****************************************************/
 
@@ -312,8 +291,10 @@ int main(int argc, FAR char *argv[])
 
   /* Determine the size and position of the window */
 
-  g_nxterm_vars.wndo.wsize.w = g_nxterm_vars.xres / 2 + g_nxterm_vars.xres / 4;
-  g_nxterm_vars.wndo.wsize.h = g_nxterm_vars.yres / 2 + g_nxterm_vars.yres / 4;
+  g_nxterm_vars.wndo.wsize.w = g_nxterm_vars.xres / 2 +
+                               g_nxterm_vars.xres / 4;
+  g_nxterm_vars.wndo.wsize.h = g_nxterm_vars.yres / 2 +
+                               g_nxterm_vars.yres / 4;
 
   g_nxterm_vars.wpos.x       = g_nxterm_vars.xres / 8;
   g_nxterm_vars.wpos.y       = g_nxterm_vars.yres / 8;
@@ -406,7 +387,6 @@ int main(int argc, FAR char *argv[])
    */
 
   printf("nxterm_main: Starting the console task\n");
-  fflush(stdout);
 
   fflush(stdout);
   fflush(stderr);
@@ -444,6 +424,7 @@ errout_with_nx:
   /* Disconnect from the server */
 
   nx_disconnect(g_nxterm_vars.hnx);
+
 errout:
   return EXIT_FAILURE;
 }

@@ -55,7 +55,7 @@
 #  endif
 #endif
 
-#if CONFIG_NFILE_STREAMS == 0
+#ifndef CONFIG_FILE_STREAM
 #  undef CONFIG_NSH_TELNET
 #  undef CONFIG_NSH_FILE_APPS
 #  undef CONFIG_NSH_TELNET
@@ -67,18 +67,8 @@
  * pseudo-filesystem are not disabled.
  */
 
-#undef NSH_HAVE_WRITABLE_MOUNTPOINT
-#if !defined(CONFIG_DISABLE_MOUNTPOINT) && CONFIG_NFILE_STREAMS > 0
-#  define NSH_HAVE_WRITABLE_MOUNTPOINT 1
-#endif
-
-#undef NSH_HAVE_PSEUDOFS_OPERATIONS
-#if !defined(CONFIG_DISABLE_PSEUDOFS_OPERATIONS) && CONFIG_NFILE_STREAMS > 0
-#  define NSH_HAVE_PSEUDOFS_OPERATIONS 1
-#endif
-
 #undef NSH_HAVE_DIROPTS
-#if defined(NSH_HAVE_WRITABLE_MOUNTPOINT) || defined(NSH_HAVE_PSEUDOFS_OPERATIONS)
+#if !defined(CONFIG_DISABLE_MOUNTPOINT) || !defined(CONFIG_DISABLE_PSEUDOFS_OPERATIONS)
 #  define NSH_HAVE_DIROPTS 1
 #endif
 
@@ -719,7 +709,7 @@ struct nsh_parser_s
 #ifndef CONFIG_NSH_DISABLEBG
   bool     np_bg;       /* true: The last command executed in background */
 #endif
-#if CONFIG_NFILE_STREAMS > 0
+#ifdef CONFIG_FILE_STREAM
   bool     np_redirect; /* true: Output from the last command was re-directed */
 #endif
   bool     np_fail;     /* true: The last command failed */
@@ -828,7 +818,7 @@ int nsh_usbconsole(void);
 #  define nsh_usbconsole() (-ENOSYS)
 #endif
 
-#if CONFIG_NFILE_STREAMS > 0 && !defined(CONFIG_NSH_DISABLESCRIPT)
+#if defined(CONFIG_FILE_STREAM) && !defined(CONFIG_NSH_DISABLESCRIPT)
 int nsh_script(FAR struct nsh_vtbl_s *vtbl, FAR const char *cmd,
                FAR const char *path);
 #ifdef CONFIG_NSH_ROMFSETC
@@ -860,7 +850,8 @@ int nsh_loginscript(FAR struct nsh_vtbl_s *vtbl);
 /* Basic session and message handling */
 
 struct console_stdio_s;
-int nsh_session(FAR struct console_stdio_s *pstate, bool login);
+int nsh_session(FAR struct console_stdio_s *pstate,
+                bool login, int argc, FAR char *argv[]);
 int nsh_parse(FAR struct nsh_vtbl_s *vtbl, char *cmdline);
 
 /****************************************************************************
@@ -1007,11 +998,11 @@ int cmd_irqinfo(FAR struct nsh_vtbl_s *vtbl, int argc, char **argv);
 #if !defined(CONFIG_NSH_DISABLE_READLINK) && defined(CONFIG_PSEUDOFS_SOFTLINKS)
   int cmd_readlink(FAR struct nsh_vtbl_s *vtbl, int argc, char **argv);
 #endif
-#if CONFIG_NFILE_STREAMS > 0 && !defined(CONFIG_NSH_DISABLESCRIPT)
+#if defined(CONFIG_FILE_STREAM) && !defined(CONFIG_NSH_DISABLESCRIPT)
 #  ifndef CONFIG_NSH_DISABLE_SOURCE
   int cmd_source(FAR struct nsh_vtbl_s *vtbl, int argc, char **argv);
 #  endif
-#endif /* CONFIG_NFILE_STREAMS && !CONFIG_NSH_DISABLESCRIPT */
+#endif /* CONFIG_FILE_STREAM && !CONFIG_NSH_DISABLESCRIPT */
 
 #ifdef NSH_HAVE_DIROPTS
 #  ifndef CONFIG_NSH_DISABLE_MKDIR
